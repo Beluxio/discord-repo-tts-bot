@@ -1,0 +1,9 @@
+services:
+  repo-tts-api:
+    build: .
+    container_name: repo-tts-api
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    restart: unless-stopped
