@@ -1,45 +1,52 @@
 from fastapi import FastAPI
-from fastapi.responses import FileResponse
-from pydantic import BaseModel
-import subprocess
-import os
-import tempfile
 
-app = FastAPI(title="Repo TTS API")
+app = FastAPI(
+    title="R.E.P.O. TTS API",
+    description="""
+# 🤖 R.E.P.O. TTS API
 
-ESPEAK = r"C:\Program Files\eSpeak NG\espeak-ng.exe"
-VOZ_IDIOMA = "en"
-VOZ_VELOCIDAD = 175
-VOZ_TONO = 30
+API para generar audio con voz robótica inspirada en el juego R.E.P.O.
+
+## Funcionalidades
+
+- 🔊 Generación de audio TTS
+- ⚡ API rápida con FastAPI
+- 🐳 Despliegue con Docker
+- ☁️ Hospedada en Render
+- 🔒 HTTPS automático
+
+## Endpoints principales
+
+- `/` → Estado del servicio
+- `/docs` → Documentación interactiva
+- `/redoc` → Documentación alternativa
+- `/tts` → Generación de voz (próximamente)
+""",
+    version="1.0.0",
+    contact={
+        "name": "Beluxio",
+        "url": "https://github.com/Beluxio",
+    },
+    license_info={
+        "name": "MIT License",
+    },
+)
 
 
-class TTSRequest(BaseModel):
-    text: str
-
-
-@app.get("/")
+@app.get("/", tags=["General"])
 def root():
-    return {"message": "Repo TTS API funcionando correctamente"}
+    return {"message": "API funcionando correctamente"}
 
 
-@app.post("/tts")
-def generate_tts(request: TTSRequest):
-    output_file = os.path.join(tempfile.gettempdir(), "repo_api_tts.wav")
+@app.get("/status", tags=["General"])
+def status():
+    return {
+        "status": "online",
+        "service": "R.E.P.O. TTS API",
+        "version": "1.0.0",
+    }
 
-    subprocess.run(
-        [
-            ESPEAK,
-            "-v",
-            VOZ_IDIOMA,
-            "-s",
-            str(VOZ_VELOCIDAD),
-            "-p",
-            str(VOZ_TONO),
-            "-w",
-            output_file,
-            request.text,
-        ],
-        check=True,
-    )
 
-    return FileResponse(output_file, media_type="audio/wav", filename="repo_tts.wav")
+@app.get("/saludo/{nombre}", tags=["Ejemplos"])
+def saludo(nombre: str):
+    return {"mensaje": f"Hola {nombre}"}
