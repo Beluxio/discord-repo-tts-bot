@@ -77,3 +77,58 @@ def status():
 @app.get("/saludo/{nombre}", tags=["Ejemplos"])
 def saludo(nombre: str):
     return {"mensaje": f"Hola {nombre}"}
+
+
+@app.get("/tts", tags=["TTS"])
+def tts(texto: str):
+    """
+    Genera un archivo WAV con voz robótica estilo R.E.P.O.
+
+    Ejemplo de uso:
+    /tts?texto=Hola mundo
+    """
+
+    # Ruta del ejecutable de eSpeak NG.
+    # En Render/Linux normalmente basta con usar "espeak-ng".
+    ESPEAK = os.getenv("ESPEAK_PATH", "espeak-ng")
+
+    # Crear archivo temporal
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as tmp:
+        output_path = tmp.name
+
+    try:
+        # Generar audio
+        subprocess.run(
+            [
+                ESPEAK,
+                "-v",
+                "en-us",
+                "-s",
+                "175",  # velocidad
+                "-p",
+                "30",  # tono
+                "-w",
+                output_path,
+                texto,
+            ],
+            check=True,
+            capture_output=True,
+        )
+
+        # Devolver el archivo al cliente
+        return FileResponse(
+            output_path,
+            media_type="audio/wav",
+            filename="repo_tts.wav",
+        )
+
+    except subprocess.CalledProcessError as e:
+        return {
+            "error": "No se pudo generar el audio",
+            "details": e.stderr.decode(errors="ignore"),
+        }
+
+    except Exception as e:
+        return {
+            "error": str(e),
+        }
