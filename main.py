@@ -1,42 +1,33 @@
-from fastapi import FastAPI
+import os
+import pathlib
+import subprocess
+import tempfile
+from fastapi import FastAPI, BackgroundTasks
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 from fastapi.openapi.docs import get_swagger_ui_html
 
 app = FastAPI(
     title="R.E.P.O. TTS API",
     description="""
-# 🤖 R.E.P.O. TTS API
+# R.E.P.O. TTS API
 
 API para generar audio con voz robótica inspirada en el juego R.E.P.O.
 
-## ✨ Funcionalidades
+## Endpoints
 
-- 🔊 Generación de audio TTS
-- ⚡ API rápida con FastAPI
-- 🐳 Despliegue con Docker
-- ☁️ Hospedada en Render
-- 🔒 HTTPS automático
-
-## 📌 Endpoints principales
-
-- `/` → Estado del servicio
-- `/status` → Información del sistema
+- `/tts` → Genera WAV con voz estilo Klattersynth
+- `/status` → Estado del servicio
 - `/docs` → Documentación interactiva
-- `/redoc` → Documentación alternativa
-- `/saludo/{nombre}` → Endpoint de ejemplo
-- `/tts` → Generación de voz (próximamente)
 """,
     version="1.0.0",
-    contact={
-        "name": "Beluxio",
-        "url": "https://github.com/Beluxio",
-    },
-    license_info={
-        "name": "MIT License",
-    },
+    contact={"name": "Beluxio", "url": "https://github.com/Beluxio"},
+    license_info={"name": "MIT License"},
 )
 
+ESPEAK = os.getenv("ESPEAK_PATH", "espeak-ng")
 
-# Documentación Swagger personalizada
+
 @app.get("/docs", include_in_schema=False)
 async def custom_swagger_ui_html():
     return get_swagger_ui_html(
@@ -53,82 +44,45 @@ async def custom_swagger_ui_html():
     )
 
 
-# Endpoint raíz
-@app.get("/", tags=["General"])
-def root():
-    return {
-        "message": "🚀 API funcionando correctamente",
-        "docs": "/docs",
-        "redoc": "/redoc",
-    }
-
-
-# Estado del servicio
 @app.get("/status", tags=["General"])
 def status():
-    return {
-        "status": "online",
-        "service": "R.E.P.O. TTS API",
-        "version": "1.0.0",
-    }
+    return {"status": "online", "service": "R.E.P.O. TTS API", "version": "1.0.0"}
 
 
-# Endpoint de ejemplo
 @app.get("/saludo/{nombre}", tags=["Ejemplos"])
 def saludo(nombre: str):
     return {"mensaje": f"Hola {nombre}"}
 
 
 @app.get("/tts", tags=["TTS"])
-def tts(texto: str):
+def tts(texto: str, background_tasks: BackgroundTasks):
     """
-    Genera un archivo WAV con voz robótica estilo R.E.P.O.
+    Genera un archivo WAV con voz robótica estilo R.E.P.O. (Klattersynth).
 
-    Ejemplo de uso:
-    /tts?texto=Hola mundo
+    Ejemplo: `/tts?texto=Hola mundo`
     """
-
-    # Ruta del ejecutable de eSpeak NG.
-    # En Render/Linux normalmente basta con usar "espeak-ng".
-    ESPEAK = os.getenv("ESPEAK_PATH", "espeak-ng")
-
-    # Crear archivo temporal
     with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as tmp:
         output_path = tmp.name
 
     try:
-        # Generar audio
         subprocess.run(
-            [
-                ESPEAK,
-                "-v",
-                "en-us",
-                "-s",
-                "175",  # velocidad
-                "-p",
-                "30",  # tono
-                "-w",
-                output_path,
-                texto,
-            ],
+            [ESPEAK, "-v", "en", "-s", "160", "-p", "25", "-a", "80", "-w", output_path, texto],
             check=True,
             capture_output=True,
         )
-
-        # Devolver el archivo al cliente
-        return FileResponse(
-            output_path,
-            media_type="audio/wav",
-            filename="repo_tts.wav",
-        )
+        background_tasks.add_task(os.unlink, output_path)
+        return FileResponse(output_path, media_type="audio/wav", filename="repo_tts.wav")
 
     except subprocess.CalledProcessError as e:
-        return {
-            "error": "No se pudo generar el audio",
-            "details": e.stderr.decode(errors="ignore"),
-        }
+        os.unlink(output_path)
+        return {"error": "No se pudo generar el audio", "details": e.stderr.decode(errors="ignore")}
 
     except Exception as e:
-        return {
-            "error": str(e),
-        }
+        os.unlink(output_path)
+        return {"error": str(e)}
+
+
+# Serve the React frontend — must be mounted LAST so API routes take precedence
+_frontend_dist = pathlib.Path(__file__).parent / "frontend" / "dist"
+if _frontend_dist.exists():
+    app.mount("/", StaticFiles(directory=str(_frontend_dist), html=True), name="frontend")

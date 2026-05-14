@@ -6,4 +6,26 @@ services:
       - "8000:8000"
     env_file:
       - .env
+    environment:
+      - ESPEAK_PATH=espeak-ng
+    restart: unless-stopped
+
+  repo-tts-bot:
+    build: .
+    container_name: repo-tts-bot
+    env_file:
+      - .env
+    environment:
+      - ESPEAK_PATH=espeak-ng
+    command: python repo_tts_bot.py
+    depends_on:
+      - repo-tts-api
+    restart: unless-stopped
+
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: repo-tts-tunnel
+    command: tunnel --url http://repo-tts-api:8000
+    depends_on:
+      - repo-tts-api
     restart: unless-stopped

@@ -1,0 +1,244 @@
+:root {
+  --accent:     #c9ff00;
+  --accent-dim: #4a5e00;
+  --accent-glow: rgba(201, 255, 0, 0.15);
+  --bg:         #0a0a0a;
+  --bg-panel:   #0e0e0e;
+  --border:     #1e1e1e;
+  --error:      #ff3b3b;
+  --online:     #00ff88;
+  --offline:    #ff3b3b;
+  --font:       'Courier New', Courier, monospace;
+}
+
+.app {
+  max-width: 680px;
+  margin: 0 auto;
+  padding: 2.5rem 1rem 3rem;
+  color: var(--accent);
+  font-family: var(--font);
+  position: relative;
+}
+
+/* CRT scanlines */
+.scanlines {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 999;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0, 0, 0, 0.07) 2px,
+    rgba(0, 0, 0, 0.07) 4px
+  );
+}
+
+/* ── Header ────────────────────────────────── */
+.header {
+  text-align: center;
+  margin-bottom: 2.5rem;
+}
+
+.logo {
+  display: inline-block;
+  font-size: clamp(0.42rem, 1.4vw, 0.62rem);
+  line-height: 1.2;
+  white-space: pre;
+  text-shadow: 0 0 8px var(--accent), 0 0 24px var(--accent-dim);
+  letter-spacing: 0;
+}
+
+.header-meta {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1.5rem;
+  margin-top: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.tagline {
+  font-size: 0.65rem;
+  color: var(--accent-dim);
+  letter-spacing: 0.12em;
+}
+
+.status-indicator {
+  font-size: 0.62rem;
+  letter-spacing: 0.06em;
+}
+.status-indicator.online   { color: var(--online); }
+.status-indicator.offline  { color: var(--offline); }
+.status-indicator.checking { color: var(--accent-dim); }
+
+/* ── Panel ─────────────────────────────────── */
+.panel {
+  border: 1px solid var(--border);
+  background: var(--bg-panel);
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.panel-title {
+  display: block;
+  font-size: 0.58rem;
+  color: var(--accent-dim);
+  letter-spacing: 0.18em;
+  text-align: center;
+}
+
+/* ── Fields ────────────────────────────────── */
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.field-label {
+  font-size: 0.62rem;
+  color: var(--accent-dim);
+  letter-spacing: 0.12em;
+}
+
+.field-textarea {
+  background: #080808;
+  border: 1px solid var(--border);
+  color: var(--accent);
+  font-family: var(--font);
+  font-size: 0.9rem;
+  line-height: 1.5;
+  padding: 0.6rem 0.75rem;
+  resize: vertical;
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.field-textarea:focus {
+  border-color: var(--accent-dim);
+  box-shadow: 0 0 10px var(--accent-glow);
+}
+
+.field-textarea::placeholder {
+  color: #282828;
+}
+
+.char-count {
+  font-size: 0.58rem;
+  color: var(--accent-dim);
+  align-self: flex-end;
+}
+
+/* ── Speak button ──────────────────────────── */
+.btn-speak {
+  align-self: flex-start;
+  background: transparent;
+  border: 1px solid var(--accent);
+  color: var(--accent);
+  font-family: var(--font);
+  font-size: 0.82rem;
+  letter-spacing: 0.18em;
+  padding: 0.6rem 1.4rem;
+  cursor: pointer;
+  text-shadow: 0 0 6px var(--accent);
+  box-shadow: 0 0 10px var(--accent-glow);
+  transition: all 0.15s;
+}
+
+.btn-speak:hover:not(:disabled) {
+  background: var(--accent);
+  color: #0a0a0a;
+  text-shadow: none;
+  box-shadow: 0 0 22px var(--accent);
+}
+
+.btn-speak:disabled {
+  opacity: 0.25;
+  cursor: not-allowed;
+  text-shadow: none;
+  box-shadow: none;
+}
+
+.btn-speak.loading {
+  opacity: 0.65;
+  animation: blink 1s ease-in-out infinite;
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 0.65; }
+  50%       { opacity: 1; }
+}
+
+/* ── Error ─────────────────────────────────── */
+.error-box {
+  border: 1px solid var(--error);
+  padding: 0.55rem 0.75rem;
+  font-size: 0.78rem;
+  color: var(--error);
+  display: flex;
+  gap: 0.75rem;
+}
+
+.error-label {
+  flex-shrink: 0;
+  font-weight: bold;
+}
+
+/* ── Audio output ──────────────────────────── */
+.output-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.audio-player {
+  width: 100%;
+  height: 36px;
+  /* tints the native player to match the accent color */
+  filter: invert(1) sepia(1) saturate(4) hue-rotate(50deg);
+}
+
+/* ── Footer ────────────────────────────────── */
+.footer {
+  margin-top: 1.5rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.58rem;
+  color: var(--accent-dim);
+  letter-spacing: 0.1em;
+}
+
+.footer-link {
+  color: var(--accent-dim);
+  text-decoration: none;
+  transition: color 0.15s;
+}
+
+.footer-link:hover {
+  color: var(--accent);
+}
+
+.sep {
+  opacity: 0.25;
+}
+
+/* ── Responsive ────────────────────────────── */
+@media (max-width: 480px) {
+  .logo {
+    font-size: 0.38rem;
+  }
+
+  .panel {
+    padding: 1rem;
+  }
+
+  .btn-speak {
+    width: 100%;
+    text-align: center;
+  }
+}

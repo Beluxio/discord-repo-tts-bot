@@ -15,6 +15,10 @@ venv/
 # Configuración del editor
 .vscode/
 
+# Frontend
+frontend/node_modules/
+frontend/dist/
+
 # Archivos del sistema
 .DS_Store
 Thumbs.db
