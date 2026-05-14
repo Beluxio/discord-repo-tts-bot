@@ -1,11 +1,12 @@
 import os
 import pathlib
-import subprocess
 import tempfile
 from fastapi import FastAPI, BackgroundTasks
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.openapi.docs import get_swagger_ui_html
+
+from tts_engine import synthesize
 
 app = FastAPI(
     title="R.E.P.O. TTS API",
@@ -24,8 +25,6 @@ API para generar audio con voz robótica inspirada en el juego R.E.P.O.
     contact={"name": "Beluxio", "url": "https://github.com/Beluxio"},
     license_info={"name": "MIT License"},
 )
-
-ESPEAK = os.getenv("ESPEAK_PATH", "espeak-ng")
 
 
 @app.get("/docs", include_in_schema=False)
@@ -57,32 +56,22 @@ def saludo(nombre: str):
 @app.get("/tts", tags=["TTS"])
 def tts(texto: str, background_tasks: BackgroundTasks):
     """
-    Genera un archivo WAV con voz robótica estilo R.E.P.O. (Klattersynth).
+    Genera un WAV con voz robótica estilo R.E.P.O. (Klattersynth + FFmpeg).
 
     Ejemplo: `/tts?texto=Hola mundo`
     """
     with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as tmp:
         output_path = tmp.name
 
-    try:
-        subprocess.run(
-            [ESPEAK, "-v", "en", "-s", "160", "-p", "25", "-a", "80", "-w", output_path, texto],
-            check=True,
-            capture_output=True,
-        )
+    if synthesize(texto, output_path):
         background_tasks.add_task(os.unlink, output_path)
         return FileResponse(output_path, media_type="audio/wav", filename="repo_tts.wav")
 
-    except subprocess.CalledProcessError as e:
-        os.unlink(output_path)
-        return {"error": "No se pudo generar el audio", "details": e.stderr.decode(errors="ignore")}
-
-    except Exception as e:
-        os.unlink(output_path)
-        return {"error": str(e)}
+    os.unlink(output_path)
+    return {"error": "No se pudo generar el audio"}
 
 
-# Serve the React frontend — must be mounted LAST so API routes take precedence
+# Sirve el frontend React — debe ir al final para no pisar rutas de la API
 _frontend_dist = pathlib.Path(__file__).parent / "frontend" / "dist"
 if _frontend_dist.exists():
     app.mount("/", StaticFiles(directory=str(_frontend_dist), html=True), name="frontend")
